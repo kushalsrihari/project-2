@@ -1,0 +1,81 @@
+pipeline{
+    agent any
+    tools{
+        jdk 'jdk-17'
+        nodejs 'node16'
+    }
+    environment {
+        SCANNER_HOME=tool 'Sonar'
+    }
+    stages {
+        stage("Clean Workspace"){
+            steps{
+                cleanWs()
+            }
+        }
+        stage('Check Out from Github'){
+            steps{
+                git 'https://github.com/kushalsrihari/project-2.git'
+            }
+        }
+        stage('SonarQube Scan'){
+            steps{
+                script{
+                    withSonarQubeEnv('Sonar-server') {
+                        // some block
+                        sh ''' $SCANNER_HOME/bin/sonar-scanner -Dsonar.projectName=Game \
+                        -Dsonar.projectKey=Game '''
+                    }
+                }
+            }
+        }
+        stage("Quality Gate"){
+           steps {
+                script {
+                    waitForQualityGate abortPipeline: false, credentialsId: 'Sonar-token' 
+                }
+            } 
+        }
+        stage('Install Dependencies') {
+            steps {
+                sh "npm install"
+            }
+        }
+        stage('OWASP FS SCAN') {
+            steps {
+                dependencyCheck additionalArguments: '--scan ./ --disableYarnAudit --disableNodeAudit', odcInstallation: 'DC'
+                dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
+            }
+        }
+        stage('TRIVY FS SCAN') {
+            steps {
+                sh "trivy fs . > trivyfs.txt"
+            }
+        }
+        stage("Docker Build & Push"){
+            steps{
+                script{
+                    withDockerRegistry(credentialsId: 'docker', toolName: 'docker') {   
+                       sh "docker build -t 2048 ."
+                       sh "docker tag 2048:latest kushalsrihari/2048:latest "
+                       sh "docker push kushalsrihari/2048:latest "
+                    }
+                }
+            }
+        }
+        stage("TRIVY Image Scan"){
+            steps{
+                sh "trivy image kushalsrihari/2048:latest > trivyimagereport.txt" 
+            }
+        }
+        stage('Deploy to kubernets'){
+            steps{
+                script{
+                    withKubeConfig(caCertificate: '', clusterName: '', contextName: '', credentialsId: 'k8s', namespace: '', restrictKubeConfigAccess: false, serverUrl: '') {
+                       sh 'kubectl apply -f deployment.yaml'
+                  }
+                }
+            }
+        }
+    }
+}    
