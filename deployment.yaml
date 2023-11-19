@@ -28,7 +28,7 @@ spec:
     app: react-app
   ports:
     - protocol: TCP
-      port: 3000  # This can be any available port on your nodes
+      port: 80  # You can use any available port
       targetPort: 3000  # The port your React app is listening on inside the pod
       nodePort: 31000  # Use a specific port within the NodePort range
   type: NodePort
