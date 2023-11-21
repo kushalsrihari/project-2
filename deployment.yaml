@@ -30,8 +30,7 @@ spec:
     - protocol: TCP
       port: 80  # You can use any available port
       targetPort: 3000  # The port your React app is listening on inside the pod
-      nodePort: 31000  # Use a specific port within the NodePort range
-  type: NodePort
+  type: LoadBalancer  # Change this line to use LoadBalancer
 
 
 
