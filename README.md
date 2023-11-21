@@ -22,8 +22,10 @@ You will also see any lint errors in the console.
 
 ### `yarn build`
 
-DockerFile is present to create a Docker Image 
-and Helm Chart is present to deploy in Kubernetes cluster 
+DockerFile is present to create a Docker Image. 
+
+
+Helm Chart is present to deploy in Kubernetes cluster and
 increase replica as per the demand 
 
 To learn React, check out the [React documentation](https://reactjs.org/).
